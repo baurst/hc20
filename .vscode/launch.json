@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'hc20'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=hc20",
+                    "--package=hc20"
+                ],
+                "filter": {
+                    "name": "hc20",
+                    "kind": "bin"
+                }
+            },
+            "args": ["0"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'hc20'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=hc20",
+                    "--package=hc20"
+                ],
+                "filter": {
+                    "name": "hc20",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
