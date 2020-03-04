@@ -1,58 +1,12 @@
-/*
-def load(ds_name):
-    filename = osp.join(osp.dirname(__file__), "..", "in", ds_name + ".txt")
-    values = readvalues(filename)
-    data = {}
-    # Todo unpack values into structured dict data
-
-    data["B"] = values[0][0]
-    data["L"] = values[0][1]
-    data["D"] = values[0][2]
-
-    data["S"] = np.asarray(values[1])
-
-    data["ids"] = []
-
-    data["N"] = []
-    data["T"] = []
-    data["M"] = []
-
-    for l in range(data["L"]):
-        n, t, m = values[2 * l + 2]
-        data["ids"].append(values[2 * l + 2 + 1])
-        data["N"].append(n)
-        data["T"].append(t)
-        data["M"].append(m)
-
-    data["libs"] = [
-        {
-            "index": i,
-            "n": data["N"][i],
-            "t": data["T"][i],
-            "m": data["M"][i],
-            "ids": set(data["ids"][i]),
-        }
-        for i in range(data["L"])
-    ]
-
-    del data["ids"]
-    del data["N"]
-    del data["T"]
-    del data["M"]
-
-    return data
-
-*/
-
 use std::env;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Book {
     value: i64,
     index: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Library {
     books: Vec<Book>,
     index: usize,
@@ -60,11 +14,42 @@ struct Library {
     max_scannable_books_per_day: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Problem {
     days_left: i64,
     book_scores: Vec<i64>,
     libraries: Vec<Library>,
+    dataset_name: String,
+}
+
+
+struct Solution {
+    libs_books: Vec<(Library, Vec<Book>)>,
+}
+
+fn score(problem: &Problem, solution: &Solution) -> i64 {
+    let mut score = 0;
+    let mut day_start: usize = 0;
+
+    for (lib, books) in &solution.libs_books {
+        day_start += lib.signup_time;
+        let mut days_necessary = 0;
+        if books.len() % lib.max_scannable_books_per_day == 0 {
+            days_necessary = books.len() / lib.max_scannable_books_per_day;
+        } else {
+            days_necessary = books.len() / lib.max_scannable_books_per_day + 1
+        }
+
+        if days_necessary > problem.days_left as usize - day_start {
+            panic!("too many books in library {}!", lib.index);
+        }
+
+        for book in books {
+            score += book.value;
+        }
+    }
+
+    return score;
 }
 
 fn load(ds_name: &str) -> Problem {
@@ -100,7 +85,7 @@ fn load(ds_name: &str) -> Problem {
         .map(|s| s.parse().unwrap())
         .collect();
 
-    let mut  libraries = vec![]; 
+    let mut libraries = vec![];
     for lib_idx in 0..num_libs {
         let lib_data: Vec<i64> = lines
             .next()
@@ -145,10 +130,28 @@ fn load(ds_name: &str) -> Problem {
         days_left: days_left,
         book_scores: book_scores,
         libraries: libraries,
+        dataset_name: ds_name.to_owned(),
     };
 
     return problem;
 }
+
+
+fn solve(problem: &Problem) -> Solution {
+    return Solution { libs_books: vec![] };
+}
+
+fn save(solution: &Solution, problem_name: &str, score: i64){
+    let target_path = env::current_dir()
+    .unwrap()
+    .join("out")
+    .join(problem_name.to_owned() + ".txt");
+
+    for (lib, books) in &solution.libs_books {
+
+    }
+}
+
 fn main() {
     let dsets = vec![
         "a_example",
@@ -162,7 +165,11 @@ fn main() {
     for argument in env::args().skip(1) {
         println!("{}", argument);
         let problem = load(dsets[argument.parse::<usize>().unwrap()]);
-        println!("{:?}", problem);
-    }
 
+        let solution = solve(&problem);
+
+        let score = score(&problem, &solution);
+
+        save(&solution, &problem.dataset_name, score);
+    }
 }
