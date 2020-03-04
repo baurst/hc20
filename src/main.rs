@@ -22,7 +22,6 @@ struct Problem {
     dataset_name: String,
 }
 
-
 struct Solution {
     libs_books: Vec<(Library, Vec<Book>)>,
 }
@@ -136,20 +135,41 @@ fn load(ds_name: &str) -> Problem {
     return problem;
 }
 
-
 fn solve(problem: &Problem) -> Solution {
     return Solution { libs_books: vec![] };
 }
 
-fn save(solution: &Solution, problem_name: &str, score: i64){
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::LineWriter;
+extern crate chrono;
+
+fn save(solution: &Solution, problem_name: &str, score: i64) {
     let target_path = env::current_dir()
-    .unwrap()
-    .join("out")
-    .join(problem_name.to_owned() + ".txt");
+        .unwrap()
+        .join("out")
+        .join(problem_name.to_owned() + ".txt");
+
+    let file = File::create(target_path.clone()).unwrap();
+    let mut file = LineWriter::new(file);
+
+    file.write_all(format!("{}\n", solution.libs_books.len()).as_bytes())
+        .unwrap();
 
     for (lib, books) in &solution.libs_books {
-
+        file.write_all(format!("{} {}", lib.index, books.len()).as_bytes())
+            .unwrap();
+        file.write_all(format!("{} {}", lib.index, books.len()).as_bytes())
+            .unwrap();
+        let books_str: String = books
+            .into_iter()
+            .map(|i| format!("{} ", i.index))
+            .collect::<String>();
+        file.write_all(books_str.as_bytes()).unwrap();
     }
+
+    file.flush().unwrap();
+    println!("Wrote file {:?}", target_path);
 }
 
 fn main() {
