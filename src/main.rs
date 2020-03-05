@@ -144,7 +144,7 @@ fn load(ds_name: &str) -> Problem {
         for book in books_in_lib {
             books.push(Book {
                 index: book as usize,
-                value: book_scores.clone()[book as usize],
+                value: book_scores[book as usize],
             });
         }
 
@@ -169,7 +169,6 @@ fn load(ds_name: &str) -> Problem {
 
 fn solve(problem: &Problem) -> Solution {
     use std::collections::HashSet;
-
     let mut books_left = HashSet::new();
     let mut lib_books: Vec<(Library, Vec<Book>)> = vec![];
     let mut libs_left = HashSet::new();
@@ -183,7 +182,7 @@ fn solve(problem: &Problem) -> Solution {
 
     let mut days_left = problem.days_left;
     while days_left > 0 && libs_left.len() > 0 {
-        let mut max_possible_lib_scores = -1;
+        let mut max_possible_lib_score = -1;
         let mut best_lib: Option<&Library> = None;
         for lib in &libs_left {
             let books_at_lib: HashSet<_> = lib.books.iter().cloned().collect();
@@ -191,7 +190,7 @@ fn solve(problem: &Problem) -> Solution {
             if books_left_at_lib.len() <= 0 {
                 continue;
             }
-            books_left_at_lib.sort();
+            books_left_at_lib.sort_unstable();
             let max_num_books_to_scan = days_left * lib.max_scannable_books_per_day as i64;
             let num_books_to_be_scanned = books_at_lib.len().min(max_num_books_to_scan as usize);
             let max_lib_score: i64 = books_left_at_lib
@@ -199,10 +198,10 @@ fn solve(problem: &Problem) -> Solution {
                 .take(num_books_to_be_scanned)
                 .map(|s| s.value)
                 .sum();
-            if max_lib_score > max_possible_lib_scores {
+            let max_lib_score = max_lib_score / lib.signup_time as i64;
+            if max_lib_score > max_possible_lib_score {
                 best_lib = Some(lib);
-                max_possible_lib_scores =
-                    max_lib_score.pow(2) / (lib.signup_time as f64).powf(0.5) as i64;
+                max_possible_lib_score = max_lib_score;
             }
         }
 
@@ -217,7 +216,7 @@ fn solve(problem: &Problem) -> Solution {
                 if books_left_at_lib.len() <= 0 {
                     continue;
                 }
-                books_left_at_lib.sort();
+                books_left_at_lib.sort_unstable();
                 let max_num_books_to_scan = days_left * best_lib.max_scannable_books_per_day as i64;
                 let num_books_to_be_scanned =
                     books_at_lib.len().min(max_num_books_to_scan as usize);
@@ -225,22 +224,23 @@ fn solve(problem: &Problem) -> Solution {
                     .books
                     .iter()
                     .take(num_books_to_be_scanned)
-                    .map(|s| s.clone())
+                    .map(|s| *s)
                     .collect();
                 let books_taken: HashSet<_> = books_to_scan.iter().cloned().collect();
                 lib_books.push((best_lib.clone(), books_to_scan));
-                let diff: HashSet<_> = books_left
-                    .difference(&books_taken)
-                    .map(|s| s.clone())
-                    .collect();
+                let diff: HashSet<_> = books_left.difference(&books_taken).map(|s| *s).collect();
                 books_left = diff;
             }
 
             libs_left.remove(best_lib);
+            println!(
+                "Choosing lib {} with score {}",
+                best_lib.index, max_possible_lib_score
+            );
         } else {
             break;
         }
-        println!("Days left: {}", days_left);
+        println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
     }
     return Solution {
         libs_books: lib_books,
