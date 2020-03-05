@@ -8,7 +8,6 @@ struct Book {
 
 use std::cmp::Ordering;
 
-
 impl Ord for Book {
     fn cmp(&self, other: &Self) -> Ordering {
         self.value.cmp(&other.value)
@@ -20,13 +19,13 @@ impl PartialOrd for Book {
     }
 }
 
-impl PartialEq for Book{
-    fn eq(&self, other: &Self) -> bool{
+impl PartialEq for Book {
+    fn eq(&self, other: &Self) -> bool {
         return self.index == other.index;
     }
 }
 
-impl Eq for Book{}
+impl Eq for Book {}
 
 #[derive(Debug, Clone, Hash)]
 struct Library {
@@ -36,13 +35,13 @@ struct Library {
     max_scannable_books_per_day: usize,
 }
 
-impl PartialEq for Library{
-    fn eq(&self, other: &Self) -> bool{
+impl PartialEq for Library {
+    fn eq(&self, other: &Self) -> bool {
         return self.index == other.index;
     }
 }
 
-impl Eq for Library{}
+impl Eq for Library {}
 
 #[derive(Debug, Clone)]
 struct Problem {
@@ -62,7 +61,7 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
 
     for (lib, books) in &solution.libs_books {
         day_start += lib.signup_time;
-        let mut days_necessary = 0;
+        let days_necessary;
         if books.len() % lib.max_scannable_books_per_day == 0 {
             days_necessary = books.len() / lib.max_scannable_books_per_day;
         } else {
@@ -83,7 +82,6 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
 
 fn load(ds_name: &str) -> Problem {
     use std::fs;
-    use std::path::Path;
 
     //   let filename = osp.join(osp.dirname(__file__), "..", "in", ds_name + ".txt")
     let filename = env::current_dir()
@@ -114,6 +112,8 @@ fn load(ds_name: &str) -> Problem {
         .map(|s| s.parse().unwrap())
         .collect();
 
+    assert_eq!(book_scores.len() as i64, num_books);
+
     let mut libraries = vec![];
     for lib_idx in 0..num_libs {
         let lib_data: Vec<i64> = lines
@@ -136,6 +136,8 @@ fn load(ds_name: &str) -> Problem {
             .filter(|s| !s.is_empty())
             .map(|s| s.parse().unwrap())
             .collect();
+
+        assert_eq!(books_in_lib.len() as i64, num_books_in_lib);
 
         let mut books = vec![];
 
@@ -166,14 +168,12 @@ fn load(ds_name: &str) -> Problem {
 }
 
 fn solve(problem: &Problem) -> Solution {
-    
     use std::collections::HashSet;
-    
+
     let mut books_left = HashSet::new();
     let mut lib_books: Vec<(Library, Vec<Book>)> = vec![];
     let mut libs_left = HashSet::new();
 
-    
     for lib in &problem.libraries {
         for book in &lib.books {
             books_left.insert(book.clone());
@@ -181,56 +181,70 @@ fn solve(problem: &Problem) -> Solution {
         libs_left.insert(lib);
     }
 
-
     let mut days_left = problem.days_left;
-    while days_left > 0 && libs_left.len() > 0{
+    while days_left > 0 && libs_left.len() > 0 {
         let mut max_possible_lib_scores = -1;
         let mut best_lib: Option<&Library> = None;
         for lib in &libs_left {
             let books_at_lib: HashSet<_> = lib.books.iter().cloned().collect();
-            let mut books_left_at_lib : Vec<_> = books_at_lib.intersection(&books_left).collect();
+            let mut books_left_at_lib: Vec<_> = books_at_lib.intersection(&books_left).collect();
             if books_left_at_lib.len() <= 0 {
                 continue;
             }
             books_left_at_lib.sort();
             let max_num_books_to_scan = days_left * lib.max_scannable_books_per_day as i64;
             let num_books_to_be_scanned = books_at_lib.len().min(max_num_books_to_scan as usize);
-            let max_lib_score: i64 = books_left_at_lib.iter().take(num_books_to_be_scanned).map(|s| s.value).sum();
-            if max_lib_score > max_possible_lib_scores{
+            let max_lib_score: i64 = books_left_at_lib
+                .iter()
+                .take(num_books_to_be_scanned)
+                .map(|s| s.value)
+                .sum();
+            if max_lib_score > max_possible_lib_scores {
                 best_lib = Some(lib);
-                max_possible_lib_scores = max_lib_score.pow(2)/(lib.signup_time as f64).powf(0.5) as i64;
+                max_possible_lib_scores =
+                    max_lib_score.pow(2) / (lib.signup_time as f64).powf(0.5) as i64;
             }
         }
 
         if best_lib.is_some() {
-            
             let best_lib = best_lib.unwrap();
 
             if days_left > best_lib.signup_time as i64 {
                 days_left -= best_lib.signup_time as i64;
                 let books_at_lib: HashSet<_> = best_lib.books.iter().cloned().collect();
-                let mut books_left_at_lib : Vec<_> = books_at_lib.intersection(&books_left).collect();
+                let mut books_left_at_lib: Vec<_> =
+                    books_at_lib.intersection(&books_left).collect();
                 if books_left_at_lib.len() <= 0 {
                     continue;
                 }
                 books_left_at_lib.sort();
                 let max_num_books_to_scan = days_left * best_lib.max_scannable_books_per_day as i64;
-                let num_books_to_be_scanned = books_at_lib.len().min(max_num_books_to_scan as usize);
-                let books_to_scan: Vec<Book> = best_lib.books.iter().take(num_books_to_be_scanned).map(|s| s.clone()).collect();
+                let num_books_to_be_scanned =
+                    books_at_lib.len().min(max_num_books_to_scan as usize);
+                let books_to_scan: Vec<Book> = best_lib
+                    .books
+                    .iter()
+                    .take(num_books_to_be_scanned)
+                    .map(|s| s.clone())
+                    .collect();
                 let books_taken: HashSet<_> = books_to_scan.iter().cloned().collect();
                 lib_books.push((best_lib.clone(), books_to_scan));
-                let diff: HashSet<_> = books_left.difference(&books_taken).map(|s| s.clone()).collect();
+                let diff: HashSet<_> = books_left
+                    .difference(&books_taken)
+                    .map(|s| s.clone())
+                    .collect();
                 books_left = diff;
             }
 
             libs_left.remove(best_lib);
-        }
-        else{
+        } else {
             break;
         }
         println!("Days left: {}", days_left);
     }
-    return Solution { libs_books: lib_books };
+    return Solution {
+        libs_books: lib_books,
+    };
 }
 
 use std::fs::File;
@@ -239,10 +253,12 @@ use std::io::LineWriter;
 extern crate chrono;
 
 fn save(solution: &Solution, problem_name: &str, score: i64) {
-    let target_path = env::current_dir()
-        .unwrap()
-        .join("out")
-        .join(problem_name.to_owned() + &format!("_score_{}_", score) + &chrono::Local::now().format("%Y_%m_%d_%H_%M_%S").to_string() + ".txt");
+    let target_path = env::current_dir().unwrap().join("out").join(
+        problem_name.to_owned()
+            + &format!("_score_{}_", score)
+            + &chrono::Local::now().format("%Y_%m_%d_%H_%M_%S").to_string()
+            + ".txt",
+    );
 
     let file = File::create(target_path.clone()).unwrap();
     let mut file = LineWriter::new(file);
