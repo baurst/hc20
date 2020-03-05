@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::env;
 
 #[derive(Debug, Clone, Copy, Hash)]
@@ -59,6 +60,9 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
     let mut score = 0;
     let mut day_start: usize = 0;
 
+    let mut books_taken: HashSet<Book> = vec![].iter().cloned().collect();
+    let mut libs_taken: HashSet<usize> = vec![].iter().cloned().collect();
+
     for (lib, books) in &solution.libs_books {
         day_start += lib.signup_time;
         let days_necessary;
@@ -74,6 +78,13 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
 
         for book in books {
             score += book.value;
+            if !books_taken.insert(book.clone()) {
+                panic!("Lib {} Book {:?} was already taken!", lib.index, book);
+            }
+        }
+
+        if !libs_taken.insert(lib.index) {
+            panic!("Lib {} was already taken!", lib.index);
         }
     }
 
@@ -168,7 +179,6 @@ fn load(ds_name: &str) -> Problem {
 }
 
 fn solve(problem: &Problem) -> Solution {
-    use std::collections::HashSet;
     let mut books_left = HashSet::new();
     let mut lib_books: Vec<(Library, Vec<Book>)> = vec![];
     let mut libs_left = HashSet::new();
@@ -211,8 +221,8 @@ fn solve(problem: &Problem) -> Solution {
             if days_left > best_lib.signup_time as i64 {
                 days_left -= best_lib.signup_time as i64;
                 let books_at_lib: HashSet<_> = best_lib.books.iter().cloned().collect();
-                let mut books_left_at_lib: Vec<_> =
-                    books_at_lib.intersection(&books_left).collect();
+                let mut books_left_at_lib: Vec<Book> =
+                    books_at_lib.intersection(&books_left).cloned().collect();
                 if books_left_at_lib.len() <= 0 {
                     continue;
                 }
@@ -220,27 +230,31 @@ fn solve(problem: &Problem) -> Solution {
                 let max_num_books_to_scan = days_left * best_lib.max_scannable_books_per_day as i64;
                 let num_books_to_be_scanned =
                     books_at_lib.len().min(max_num_books_to_scan as usize);
-                let books_to_scan: Vec<Book> = best_lib
-                    .books
+                let books_to_scan: Vec<Book> = books_left_at_lib
                     .iter()
                     .take(num_books_to_be_scanned)
-                    .map(|s| *s)
+                    .cloned()
                     .collect();
                 let books_taken: HashSet<_> = books_to_scan.iter().cloned().collect();
                 lib_books.push((best_lib.clone(), books_to_scan));
-                let diff: HashSet<_> = books_left.difference(&books_taken).map(|s| *s).collect();
+                let _num_books = books_left.len();
+                let diff: HashSet<_> = books_left.difference(&books_taken).cloned().collect();
+                let _new_left = diff.len();
+
+                //println!("Removing {} books from books_left", num_books - new_left);
+
                 books_left = diff;
             }
 
             libs_left.remove(best_lib);
-            println!(
-                "Choosing lib {} with score {}",
-                best_lib.index, max_possible_lib_score
-            );
+        //println!(
+        //    "Choosing lib {} with score {}",
+        //    best_lib.index, max_possible_lib_score
+        //);
         } else {
             break;
         }
-        println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
+        //println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
     }
     return Solution {
         libs_books: lib_books,
@@ -290,14 +304,26 @@ fn main() {
         "f_libraries_of_the_world",
     ];
 
-    for argument in env::args().skip(1) {
-        println!("{}", argument);
-        let problem = load(dsets[argument.parse::<usize>().unwrap()]);
+    use rayon::prelude::*;
+    let args: Vec<usize> = env::args()
+        .skip(1)
+        .map(|s| s.parse::<usize>().unwrap())
+        .collect();
 
-        let solution = solve(&problem);
+    let scores: Vec<i64> = args
+        .par_iter()
+        .map(|argument| {
+            //println!("{}", argument);
+            let problem = load(dsets[*argument]);
 
-        let score = score(&problem, &solution);
+            let solution = solve(&problem);
 
-        save(&solution, &problem.dataset_name, score);
-    }
+            let score = score(&problem, &solution);
+            //cum_score += score;
+            save(&solution, &problem.dataset_name, score);
+            return score;
+        })
+        .collect();
+    let total_score: i64 = scores.iter().sum();
+    println!("Total score: {} ", total_score);
 }
