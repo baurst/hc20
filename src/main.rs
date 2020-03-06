@@ -185,7 +185,7 @@ fn solve(problem: &Problem) -> Solution {
 
     for lib in &problem.libraries {
         for book in &lib.books {
-            books_left.insert(book.clone());
+            books_left.insert(book);
         }
         libs_left.insert(lib);
     }
@@ -195,7 +195,7 @@ fn solve(problem: &Problem) -> Solution {
         let mut max_possible_lib_score = -1;
         let mut best_lib: Option<&Library> = None;
         for lib in &libs_left {
-            let books_at_lib: HashSet<_> = lib.books.iter().cloned().collect();
+            let books_at_lib: HashSet<_> = lib.books.iter().collect();
             let mut books_left_at_lib: Vec<_> = books_at_lib.intersection(&books_left).collect();
             if books_left_at_lib.len() <= 0 {
                 continue;
@@ -220,9 +220,9 @@ fn solve(problem: &Problem) -> Solution {
 
             if days_left > best_lib.signup_time as i64 {
                 days_left -= best_lib.signup_time as i64;
-                let books_at_lib: HashSet<_> = best_lib.books.iter().cloned().collect();
-                let mut books_left_at_lib: Vec<Book> =
-                    books_at_lib.intersection(&books_left).cloned().collect();
+                let books_at_lib: HashSet<_> = best_lib.books.iter().collect();
+                let mut books_left_at_lib: Vec<_> =
+                    books_at_lib.intersection(&books_left).collect();
                 if books_left_at_lib.len() <= 0 {
                     continue;
                 }
@@ -230,17 +230,19 @@ fn solve(problem: &Problem) -> Solution {
                 let max_num_books_to_scan = days_left * best_lib.max_scannable_books_per_day as i64;
                 let num_books_to_be_scanned =
                     books_at_lib.len().min(max_num_books_to_scan as usize);
-                let books_to_scan: Vec<Book> = books_left_at_lib
+                let books_to_scan: Vec<_> = books_left_at_lib
                     .iter()
                     .take(num_books_to_be_scanned)
                     .cloned()
+                    .cloned()
                     .collect();
                 let books_taken: HashSet<_> = books_to_scan.iter().cloned().collect();
-                lib_books.push((best_lib.clone(), books_to_scan));
-                let _num_books = books_left.len();
                 let diff: HashSet<_> = books_left.difference(&books_taken).cloned().collect();
-                let _new_left = diff.len();
 
+
+                let books_to_scan : Vec<Book> = books_to_scan.iter().cloned().cloned().collect();
+                lib_books.push((best_lib.clone(), books_to_scan.iter().cloned().collect()));
+ 
                 //println!("Removing {} books from books_left", num_books - new_left);
 
                 books_left = diff;
@@ -254,7 +256,7 @@ fn solve(problem: &Problem) -> Solution {
         } else {
             break;
         }
-        //println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
+        println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
     }
     return Solution {
         libs_books: lib_books,
