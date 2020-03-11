@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::env;
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Hash)]
 struct Book {
     value: i64,
     index: usize,
@@ -210,7 +210,8 @@ fn solve(problem: &Problem) -> Solution {
             }
             books_left_at_lib.sort_unstable();
             books_left_at_lib.reverse();
-            let max_num_books_to_scan = days_left * lib.max_scannable_books_per_day as i64;
+            let max_num_books_to_scan =
+                (days_left - lib.signup_time as i64) * lib.max_scannable_books_per_day as i64;
             let num_books_to_be_scanned = books_at_lib.len().min(max_num_books_to_scan as usize);
             let max_lib_score: i64 = books_left_at_lib
                 .iter()
@@ -247,14 +248,12 @@ fn solve(problem: &Problem) -> Solution {
                     .cloned()
                     .collect();
                 let books_taken: HashSet<_> = books_to_scan.iter().cloned().collect();
-                let diff: HashSet<_> = books_left.difference(&books_taken).cloned().collect();
+                books_left = books_left.difference(&books_taken).cloned().collect();
 
                 let books_to_scan: Vec<Book> = books_to_scan.iter().cloned().cloned().collect();
                 lib_books.push((best_lib.clone(), books_to_scan.iter().cloned().collect()));
 
                 //println!("Removing {} books from books_left", num_books - new_left);
-
-                books_left = diff;
             }
 
             libs_left.remove(best_lib);
