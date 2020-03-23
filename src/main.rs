@@ -22,7 +22,7 @@ impl PartialOrd for Book {
 
 impl PartialEq for Book {
     fn eq(&self, other: &Self) -> bool {
-        return self.index == other.index;
+        self.index == other.index
     }
 }
 
@@ -38,7 +38,7 @@ struct Library {
 
 impl PartialEq for Library {
     fn eq(&self, other: &Self) -> bool {
-        return self.index == other.index;
+        self.index == other.index
     }
 }
 
@@ -88,13 +88,12 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
         }
     }
 
-    return score;
+    score
 }
 
 fn load(ds_name: &str) -> Problem {
     use std::fs;
 
-    //   let filename = osp.join(osp.dirname(__file__), "..", "in", ds_name + ".txt")
     let filename = env::current_dir()
         .unwrap()
         .join("datasets")
@@ -104,7 +103,7 @@ fn load(ds_name: &str) -> Problem {
     let mut lines = contents.lines();
     let num_books = lines.next().unwrap();
     let first_line: Vec<i64> = num_books
-        .split(" ")
+        .split(' ')
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|s| s.parse().unwrap())
@@ -117,7 +116,7 @@ fn load(ds_name: &str) -> Problem {
     let book_scores: Vec<i64> = lines
         .next()
         .unwrap()
-        .split(" ")
+        .split(' ')
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|s| s.parse().unwrap())
@@ -130,7 +129,7 @@ fn load(ds_name: &str) -> Problem {
         let lib_data: Vec<i64> = lines
             .next()
             .unwrap()
-            .split(" ")
+            .split(' ')
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
             .map(|s| s.parse().unwrap())
@@ -142,7 +141,7 @@ fn load(ds_name: &str) -> Problem {
         let books_in_lib: Vec<i64> = lines
             .next()
             .unwrap()
-            .split(" ")
+            .split(' ')
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
             .map(|s| s.parse().unwrap())
@@ -160,7 +159,7 @@ fn load(ds_name: &str) -> Problem {
         }
 
         let lib = Library {
-            books: books,
+            books,
             index: lib_idx as usize,
             signup_time: signup_time as usize,
             max_scannable_books_per_day: max_shippable_books_per_day as usize,
@@ -168,14 +167,12 @@ fn load(ds_name: &str) -> Problem {
         libraries.push(lib);
     }
 
-    let problem = Problem {
-        days_left: days_left,
-        book_scores: book_scores,
-        libraries: libraries,
+    Problem {
+        days_left,
+        book_scores,
+        libraries,
         dataset_name: ds_name.to_owned(),
-    };
-
-    return problem;
+    }
 }
 
 fn solve(problem: &Problem) -> Solution {
@@ -192,7 +189,7 @@ fn solve(problem: &Problem) -> Solution {
 
     let mut days_left = problem.days_left;
     let mut num_remaining_libs = libs_left.len();
-    while days_left > 0 && num_remaining_libs > 0 && books_left.len() > 0 {
+    while days_left > 0 && num_remaining_libs > 0 && !books_left.is_empty() {
         let mut max_possible_lib_score = -1;
         let mut best_lib: Option<&Library> = None;
 
@@ -205,7 +202,7 @@ fn solve(problem: &Problem) -> Solution {
         for lib in &libs_left {
             let books_at_lib: HashSet<_> = lib.books.iter().collect();
             let mut books_left_at_lib: Vec<_> = books_at_lib.intersection(&books_left).collect();
-            if books_left_at_lib.len() <= 0 {
+            if books_left_at_lib.is_empty() {
                 continue;
             }
             books_left_at_lib.sort_unstable();
@@ -233,7 +230,7 @@ fn solve(problem: &Problem) -> Solution {
                 let books_at_lib: HashSet<_> = best_lib.books.iter().collect();
                 let mut books_left_at_lib: Vec<_> =
                     books_at_lib.intersection(&books_left).collect();
-                if books_left_at_lib.len() <= 0 {
+                if books_left_at_lib.is_empty() {
                     continue;
                 }
                 books_left_at_lib.sort_unstable();
@@ -251,25 +248,18 @@ fn solve(problem: &Problem) -> Solution {
                 books_left = books_left.difference(&books_taken).cloned().collect();
 
                 let books_to_scan: Vec<Book> = books_to_scan.iter().cloned().cloned().collect();
-                lib_books.push((best_lib.clone(), books_to_scan.iter().cloned().collect()));
-
-                //println!("Removing {} books from books_left", num_books - new_left);
+                lib_books.push((best_lib.clone(), books_to_scan.to_vec()));
             }
 
             libs_left.remove(best_lib);
             num_remaining_libs = libs_left.len();
-        //println!(
-        //    "Choosing lib {} with score {}",
-        //    best_lib.index, max_possible_lib_score
-        //);
         } else {
             break;
         }
-        //println!("Days left: {} - Libs left: {}", days_left, libs_left.len());
     }
-    return Solution {
+    Solution {
         libs_books: lib_books,
-    };
+    }
 }
 
 use std::fs::File;
@@ -295,7 +285,7 @@ fn save(solution: &Solution, problem_name: &str, score: i64) {
         file.write_all(format!("{} {}\n", lib.index, books.len()).as_bytes())
             .unwrap();
         let books_str: String = books
-            .into_iter()
+            .iter()
             .map(|i| format!("{} ", i.index))
             .collect::<String>();
         file.write_all((books_str + "\n").as_bytes()).unwrap();
@@ -324,15 +314,13 @@ fn main() {
     let scores: Vec<i64> = args
         .par_iter()
         .map(|argument| {
-            //println!("{}", argument);
             let problem = load(dsets[*argument]);
 
             let solution = solve(&problem);
 
             let score = score(&problem, &solution);
-            //cum_score += score;
             save(&solution, &problem.dataset_name, score);
-            return score;
+            score
         })
         .collect();
     let total_score: i64 = scores.iter().sum();
