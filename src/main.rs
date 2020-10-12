@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use std::env;
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, Hash)]
 struct Book {
@@ -92,8 +94,6 @@ fn score(problem: &Problem, solution: &Solution) -> i64 {
 }
 
 fn load(ds_name: &str) -> Problem {
-    use std::fs;
-
     let filename = env::current_dir()
         .unwrap()
         .join("datasets")
@@ -310,6 +310,11 @@ fn main() {
         .skip(1)
         .map(|s| s.parse::<usize>().unwrap())
         .collect();
+
+    let solutions_target_dir = env::current_dir().unwrap().join("out");
+    if !Path::new(&solutions_target_dir).exists() {
+        fs::create_dir(solutions_target_dir).unwrap();
+    }
 
     let scores: Vec<i64> = args
         .par_iter()
