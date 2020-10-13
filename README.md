@@ -5,6 +5,25 @@
 
 This is a [Google Hash Code 2020](https://codingcompetitions.withgoogle.com/hashcode) solution (Rank 824 out of 10724): [Problem statement](https://storage.googleapis.com/coding-competitions.appspot.com/HC/2020/hashcode_2020_online_qualification_round.pdf).
 
+## Build & Run
+
+```bash
+git clone https://github.com/baurst/hc20
+cd hc20
+cargo run --release 0 1 2 3 4 5
+```
+
+Each digit represents a specific problem (check folder datasets):
+
+0. a_example.txt
+1. b_read_on.txt
+2. c_incuabula.txt
+3. d_tough_choices.txt
+4. e_so_many_books.txt
+5. f_libraries_of_the_world.txt
+
+If you provide multiple digits, the problems will be solved in parallel.
+The tool will create a directory called out and save the solutions with their respective score.
 
 ## Background
 Our [original solution](https://github.com/ltriess/hc20) was done in Python.
@@ -27,3 +46,4 @@ Instead of having to focus on a solution that can be expressed using numpy matri
 * [Christoph Rist](https://github.com/risteon)
 * [David Schmidt](https://github.com/DavidS3141)
 * [Stefan Baur](https://github.com/baurst)
+
